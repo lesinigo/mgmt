@@ -1,0 +1,19 @@
+#####################
+# MGMT build stage  #
+#####################
+FROM golang:1.13.7-alpine3.11 AS builder
+
+COPY . ${GOPATH}/src/github.com/purpleidea/mgmt
+
+RUN apk --no-cache add bash git go make ca-certificates libvirt-dev augeas-dev ruby ruby-dev libpcap-dev && \
+    cd ${GOPATH}/src/github.com/purpleidea/mgmt && \
+    git submodule update --init --recursive && \
+    make deps && \
+    make
+
+#####################
+# image build stage #
+#####################
+FROM alpine:3.11.3
+RUN apk --no-cache add augeas libvirt
+COPY --from=builder /go/src/github.com/purpleidea/mgmt/mgmt /usr/bin/mgmt
