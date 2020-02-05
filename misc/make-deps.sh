@@ -14,6 +14,7 @@ sudo_command=$(command -v sudo)
 GO=`command -v go 2>/dev/null`
 YUM=`command -v yum 2>/dev/null`
 DNF=`command -v dnf 2>/dev/null`
+APK=`command -v apk 2>/dev/null`
 APT=`command -v apt-get 2>/dev/null`
 NEWAPT=`command -v apt 2>/dev/null`
 BREW=`command -v brew 2>/dev/null`
@@ -29,7 +30,7 @@ if [ -x "$NEWAPT" ]; then
 	APT=$NEWAPT
 fi
 
-if [ -z "$YUM" -a -z "$APT" -a -z "$BREW" -a -z "$PACMAN" ]; then
+if [ -z "$YUM" -a -z "$APT" -a -z "$BREW" -a -z "$PACMAN" -a -z "$APK" ]; then
 	echo "The package managers can't be found."
 	exit 1
 fi
@@ -63,6 +64,9 @@ if [ ! -z "$APT" ]; then
 	$sudo_command $APT install -y inotify-tools # used by some tests
 	$sudo_command $APT install -y graphviz # for debugging
 fi
+if [ ! -z "$APK" ]; then
+	$sudo_command $APK add --no-cache ca-certificates libvirt-dev augeas-dev ruby ruby-dev libpcap-dev
+fi
 
 if [ ! -z "$BREW" ]; then
 	# coreutils contains gtimeout, gstat, etc
@@ -90,6 +94,12 @@ if [ $travis -eq 0 ]; then
 			$sudo_command $APT install -y golang-go.tools || true
 		fi
 		$sudo_command $APT install -y build-essential packagekit mercurial
+	fi
+	if [ ! -z "$APK" ]; then
+		if [ -z "$GO" ]; then
+			$sudo_command $APK add --no-cache go go-bindata
+		fi
+		$sudo_command $APK add --no-cache bash gcc git make musl-dev
 	fi
 	if [ ! -z "$PACMAN" ]; then
 		$sudo_command $PACMAN -S --noconfirm --asdeps --needed go gcc pkg-config
